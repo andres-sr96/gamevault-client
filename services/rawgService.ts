@@ -3,9 +3,9 @@ import rawgApi from "./rawgApi";
 
 const API_KEY = process.env.NEXT_PUBLIC_RAWG_API_KEY;
 
-export const getGames = async (): Promise<GameListItem[]> => {
+export const getGames = async (search?: string, page: number = 1): Promise<GameListItem[]> => {
   const res = await rawgApi.get(`/games`, {
-    params: { key: API_KEY },
+    params: { key: API_KEY, search: search || undefined, page },
   });
 
   return res.data.results.map((g: any) => ({
