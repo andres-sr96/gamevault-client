@@ -12,3 +12,13 @@ export type GameDetails = {
   coverImageUrl: string;
   releaseYear: string;
 };
+
+export type UserGameListItem = {
+  id: number;
+  gameId: number;
+  status: number;
+  rating: number;
+
+  title?: string;
+  coverImageUrl?: string;
+}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { getGameById } from "@/services/rawgService";
 import { GameDetails } from "@/types/games";
+import { addGameToList } from "@/services/userGameListService";
 
 export default function GameDetailsPage() {
   const params = useParams();
@@ -31,6 +32,15 @@ export default function GameDetailsPage() {
     return <div className="p-10">Game not found.</div>;
   }
 
+  const handleAdd = async () => {
+    try {
+      await addGameToList(Number(game.id), 0, 5);
+    } catch (err: any) {
+      console.log("STATUS:", err.response?.status);
+      console.log("DATA:", err.response?.data);
+    }
+  };
+
   return (
     <main className="p-10">
       <h1 className="text-3xl font-bold">{game.title}</h1>
@@ -47,6 +57,12 @@ export default function GameDetailsPage() {
           className="mt-6 rounded w-64"
         />
       )}
+      <button
+        onClick={handleAdd}
+        className="mt-4 border rounded px-4 py-2 hover:bg-gray-100 cursor-pointer"
+      >
+        Add To My List
+      </button>
     </main>
   );
 }
