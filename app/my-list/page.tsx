@@ -7,6 +7,9 @@ import {
   deleteGameFromList,
 } from "@/services/userGameListService";
 import { getGameById } from "@/services/rawgService";
+import { getUsernameFromToken } from "@/services/authToken";
+import { getGameReview } from "@/services/reviewService";
+import Link from "next/link";
 
 export default function MyListPage() {
   const [list, setList] = useState<any[]>([]);
@@ -15,16 +18,23 @@ export default function MyListPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editStatus, setEditStatus] = useState<number>(0);
   const [editRating, setEditRating] = useState<number>(5);
+  const [reviewedGameIds, setReviewedGameIds] = useState<number[]>([]);
 
-  // Helper dictionary to cleanly show UI labels based on the number code
+  // Helper to cleanly show UI labels based on the number code
   const statusLabel = (status: number) => {
     switch (status) {
-      case 0: return "Playing";
-      case 1: return "Completed";
-      case 2: return "On Hold";
-      case 3: return "Dropped";
-      case 4: return "Plan To Play";
-      default: return "Unknown";
+      case 0:
+        return "Playing";
+      case 1:
+        return "Completed";
+      case 2:
+        return "On Hold";
+      case 3:
+        return "Dropped";
+      case 4:
+        return "Plan To Play";
+      default:
+        return "Unknown";
     }
   };
 
@@ -32,34 +42,56 @@ export default function MyListPage() {
     const load = async () => {
       try {
         const data = await getMyList();
+        const username = getUsernameFromToken();
 
         // Map backend string representation back to our UI's internal enum integers
         const reverseStatusMap: { [key: string]: number } = {
-          "Playing": 0,
-          "Completed": 1,
+          Playing: 0,
+          Completed: 1,
           "On Hold": 2,
-          "OnHold": 2, // backup safety case
-          "Dropped": 3,
+          OnHold: 2,
+          Dropped: 3,
           "Plan To Play": 4,
-          "PlanToPlay": 4 // backup safety case
+          PlanToPlay: 4,
         };
+
+        const reviewedIds: number[] = [];
 
         const enriched = await Promise.all(
           data.map(async (item: any) => {
             const game = await getGameById(item.gameId);
-            
-            // Turn string from backend (e.g. "Completed") into our React number code (e.g. 1)
+
+            // Turn string from backend into our React number code
             const numericStatus = reverseStatusMap[item.status] ?? 0;
+
+            // Check community database
+            if (username) {
+              try {
+                const reviews = await getGameReview(item.gameId);
+                const hasUserReview = reviews.some(
+                  (r: any) => r.username === username,
+                );
+                if (hasUserReview) {
+                  reviewedIds.push(item.gameId);
+                }
+              } catch (e) {
+                console.error(
+                  `Failed to scan reviews for game ${item.gameId}`,
+                  e,
+                );
+              }
+            }
 
             return {
               ...item,
-              status: numericStatus, 
+              status: numericStatus,
               title: game?.title || "Unknown Title",
               coverImageUrl: game?.coverImageUrl || "",
             };
-          })
+          }),
         );
 
+        setReviewedGameIds(reviewedIds);
         setList(enriched);
       } catch (err) {
         console.log(err);
@@ -82,8 +114,16 @@ export default function MyListPage() {
 
   const startEdit = (item: any) => {
     setEditingId(item.id);
-    setEditStatus(item.status !== null && item.status !== undefined ? Number(item.status) : 0);
-    setEditRating(item.rating !== null && item.rating !== undefined ? Number(item.rating) : 5);
+    setEditStatus(
+      item.status !== null && item.status !== undefined
+        ? Number(item.status)
+        : 0,
+    );
+    setEditRating(
+      item.rating !== null && item.rating !== undefined
+        ? Number(item.rating)
+        : 5,
+    );
   };
 
   const handleUpdate = async (item: any) => {
@@ -95,8 +135,8 @@ export default function MyListPage() {
         prev.map((x) =>
           x.id === item.id
             ? { ...x, status: editStatus, rating: editRating }
-            : x
-        )
+            : x,
+        ),
       );
 
       setEditingId(null);
@@ -108,87 +148,126 @@ export default function MyListPage() {
   if (loading) return <div className="p-10">Loading...</div>;
 
   return (
-    <main className="p-10">
-      <h1 className="text-3xl font-bold mb-6">My List</h1>
+    <main className="p-10 max-w-5xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">My Vault List</h1>
 
       {list.length === 0 ? (
-        <p className="text-gray-500">No games in your list yet.</p>
+        <p className="text-gray-500 italic">No games in your list yet.</p>
       ) : (
         <div className="space-y-4">
-          {list.map((item) => (
-            <div
-              key={item.id}
-              className="border rounded p-4 flex justify-between items-center"
-            >
-              <div className="flex gap-4 items-center">
-                {item.coverImageUrl && (
-                  <img
-                    src={item.coverImageUrl}
-                    className="w-16 h-16 object-cover rounded"
-                    alt={item.title}
-                  />
-                )}
+          {list.map((item) => {
+            const hasReviewed = reviewedGameIds.includes(item.gameId);
 
-                <div>
-                  <div className="font-semibold">{item.title}</div>
-                  <div className="text-sm text-gray-600">
-                    Status: {statusLabel(item.status)}
+            return (
+              <div
+                key={item.id}
+                className="border rounded-xl p-5 flex justify-between items-center bg-white shadow-sm hover:shadow transition gap-4"
+              >
+                {/* Game Information Section */}
+                <div className="flex gap-4 items-center">
+                  {item.coverImageUrl && (
+                    <img
+                      src={item.coverImageUrl}
+                      className="w-16 h-16 object-cover rounded-lg border shadow-sm"
+                      alt={item.title}
+                    />
+                  )}
+
+                  <div>
+                    <Link
+                      href={`/games/${item.gameId}`}
+                      className="font-bold text-gray-900 hover:text-blue-600 text-lg transition"
+                    >
+                      {item.title}
+                    </Link>
+                    <div className="flex gap-3 items-center text-sm text-gray-600 mt-1">
+                      <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-semibold text-gray-700">
+                        {statusLabel(item.status)}
+                      </span>
+                      <span>•</span>
+                      <span>Your Rating: {"⭐".repeat(item.rating)}</span>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    Rating: {"⭐".repeat(item.rating)}
-                  </div>
+                </div>
+
+                {/* Interaction & Editing Segment */}
+                <div className="flex items-center gap-4">
+                  {/* --- NEW: Review Status Encouragement Badge/Button --- */}
+                  {editingId !== item.id && (
+                    <div>
+                      {hasReviewed ? (
+                        <span className="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg shadow-sm">
+                          ✓ Reviewed
+                        </span>
+                      ) : (
+                        <Link
+                          href={`/games/${item.gameId}?focus=review`}
+                          className="text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition shadow-sm"
+                        >
+                          ✍️ Write a Review
+                        </Link>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Existing Editing Controls */}
+                  {editingId === item.id ? (
+                    <div className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg border">
+                      <select
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(Number(e.target.value))}
+                        className="border rounded px-2 py-1 bg-white text-sm font-medium"
+                      >
+                        <option value={0}>Playing</option>
+                        <option value={1}>Completed</option>
+                        <option value={2}>On Hold</option>
+                        <option value={3}>Dropped</option>
+                        <option value={4}>Plan To Play</option>
+                      </select>
+
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        value={editRating}
+                        onChange={(e) => setEditRating(Number(e.target.value))}
+                        className="border rounded px-2 py-1 w-14 bg-white text-sm font-medium text-center"
+                      />
+
+                      <button
+                        onClick={() => handleUpdate(item)}
+                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700 transition cursor-pointer"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="px-3 py-1 border rounded text-sm bg-white hover:bg-gray-100 transition cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => startEdit(item)}
+                        className="border px-3 py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-gray-50 transition shadow-sm cursor-pointer"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="border px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-red-600 hover:bg-red-50 transition shadow-sm cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {editingId === item.id ? (
-                <div className="flex gap-2 items-center">
-                  <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(Number(e.target.value))}
-                    className="border px-2 py-1"
-                  >
-                    <option value={0}>Playing</option>
-                    <option value={1}>Completed</option>
-                    <option value={2}>On Hold</option>
-                    <option value={3}>Dropped</option>
-                    <option value={4}>Plan To Play</option>
-                  </select>
-
-                  <input
-                    type="number"
-                    min={1}
-                    max={5}
-                    value={editRating}
-                    onChange={(e) => setEditRating(Number(e.target.value))}
-                    className="border px-2 py-1 w-16"
-                  />
-
-                  <button
-                    onClick={() => handleUpdate(item)}
-                    className="border px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Save
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => startEdit(item)}
-                    className="border px-3 py-1 rounded hover:bg-gray-100"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="border px-3 py-1 rounded text-red-600 hover:bg-red-100"
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </main>
