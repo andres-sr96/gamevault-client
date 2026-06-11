@@ -21,9 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        <Navbar></Navbar>
-        {children}
+      <body className="min-h-full flex flex-col bg-gray-950">
+        <Navbar /> {/* Global Site Header */}
+        {children} {/* Will inject the <main> block below */}
       </body>
     </html>
   );

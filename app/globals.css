@@ -1,43 +1,6 @@
 @import "tailwindcss";
+
 body {
   font-family: var(--font-inter);
   font-weight: 400;
-}
-
-/* Navbar component */
-.navbar-background {
-  background-color: #2d3133;
-}
-
-.navbar-title {
-  font-weight: 700;
-}
-
-/* Anchor animation */
-.anchor {
-  position: relative;
-  display: inline-block;
-  text-decoration: none;
-}
-
-.anchor::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -2px;
-  height: 2px;
-  width: 100%;
-  background: currentColor;
-
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.25s ease;
-}
-
-.anchor:hover::after {
-  transform: scaleX(1);
-}
-
-.anchor-active::after {
-  transform: scaleX(1);
 }

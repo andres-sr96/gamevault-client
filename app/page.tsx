@@ -1,7 +1,9 @@
+import HeroBanner from "@/components/HeroBanner"
+
 export default function Home() {
   return(
-    <main className="p-10">
-      <h1 className="text-4xl font-bold">GameVault</h1>
+    <main className="w-full pt-6">
+      <HeroBanner />
     </main>
   )
 }
