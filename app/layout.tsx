@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import AmbientBackground from "@/components/AmbientBackground";
+import { Footer } from "@/components/Footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,9 +23,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-gray-950">
-        <Navbar /> {/* Global Site Header */}
-        {children} {/* Will inject the <main> block below */}
+      <body className="min-h-full flex flex-col bg-gray-950 text-white relative">
+        <AmbientBackground />
+        <Navbar />
+        <main className="relative z-10 flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );

@@ -58,7 +58,7 @@ export default function Navbar() {
   const isActive = (path: string) => pathname === path;
 
   return (
-<header role="banner" className="relative z-50">
+    <header role="banner" className="relative z-50">
       <nav className="fixed top-0 left-0 w-full px-4">
         {/* Dynamic morphing floating container wrapper */}
         <div

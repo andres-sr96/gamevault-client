@@ -4,7 +4,7 @@ import GlowButton from "./GlowButton";
 
 export default function HeroBanner() {
   return (
-    <section className="relative bg-gray-950 text-white py-24 px-6 sm:px-12 border-b border-gray-800 text-center sm:text-left overflow-hidden min-h-[45vh] flex items-center">
+    <section className="relative text-white py-24 px-6 sm:px-12 text-center sm:text-left overflow-hidden min-h-[45vh] flex items-center">
       {/* Ambient background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 z-0 h-full w-full max-w-7xl bg-[radial-gradient(...) layout]" />
       {/* Main Content Container */}
